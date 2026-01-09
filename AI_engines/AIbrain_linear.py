@@ -13,16 +13,17 @@ class AIbrain_linear:
     def __init__(self):
         super().__init__()
         self.score = 0
-        self.chars = string.ascii_letters + string.digits  # a-z, A-Z, 0-9
+        self.chars = string.ascii_letters + string.digits  # pro potreby náhdných znaků
         self.decider = 0
-        self.x = 0
-        self.y = 0
-        self.speed = 0
+        self.x = 0 # sem se ulozí souradnice x, max HEIGHT*1.3
+        self.y = 0 # sem se ulozí souradnice y, max HEIGHT (800)
+        self.speed = 0 # sem se ukládá souradnice, max MAXSPEED ( 500)
 
         self.init_param()
 
     def init_param(self):
         # zde si vytvoríme promnenne co potrebujeme pro nas model
+        # parametry modely vzdy inicializovat v této metode
         self.W = (np_random.rand(N_ACTIONS, N_INPUTS) - 0.5) / N_INPUTS
         self.b = (np_random.rand(N_ACTIONS) - 0.5)
 
@@ -80,14 +81,16 @@ class AIbrain_linear:
 
         self.parameters = params_dict
 
+        # Zde nastavit co chceme ukládat:
         self.W = np.array(self.parameters["W"], dtype=float)
         self.b = np.array(self.parameters["b"], dtype=float)
         self.NAME = str(self.parameters["NAME"])
 
-    ##################### do těchto funkcí není potřeba zasahovat:
+
     def calculate_score(self, distance, time, no):
         self.score = distance
 
+    ##################### do těchto funkcí není potřeba zasahovat:
     def passcardata(self, x, y, speed):
         self.x = x
         self.y = y
