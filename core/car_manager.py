@@ -7,6 +7,8 @@ import copy
 from pathlib import Path
 import numpy as np
 
+SPAWN_Y_JITTER_PX = 12
+
 class Car_manager():
     def __init__(self, pocet_aut, pocet_generaci, max_time, cars_to_next,save_as, load_from):
         self.pocet_aut = pocet_aut
@@ -45,9 +47,13 @@ class Car_manager():
         self.total_time = 0
         self.cur_epoch += 1
 
+        base_x = TILESIZE * 4 + int(TILESIZE / 2)
+        base_y = TILESIZE * 8 + int(TILESIZE / 2)
+
         for i in range(self.cars_to_next):
-            c = AI_car(TILESIZE * 4 + int(TILESIZE / 2), TILESIZE * 8 + int(TILESIZE / 2), 10, 20,
-                       copy.deepcopy(self.best_cars_list[i].brain))
+            y = base_y + int(np.random.randint(-SPAWN_Y_JITTER_PX, SPAWN_Y_JITTER_PX + 1))
+            c = AI_car(base_x, y, 10, 20,
+                       copy.deepcopy(self.best_cars_list[i].brain),  180+np.random.randint(-45,+45))
             self.sprite_list.append(c)
             self.sprite_running.add(c)
 
@@ -84,9 +90,13 @@ class Car_manager():
         self.cur_epoch = 0
         self.total_time = 0
 
+        base_x = TILESIZE * 4 + int(TILESIZE / 2)
+        base_y = TILESIZE * 8 + int(TILESIZE / 2)
+
         # a vytvořím auta:
         for i in range(self.pocet_aut):
-            c = AI_car(TILESIZE * 4 + int(TILESIZE / 2), TILESIZE * 8 + int(TILESIZE / 2), 10, 20, self.brain_list[i])
+            y = base_y + int(np.random.randint(-SPAWN_Y_JITTER_PX, SPAWN_Y_JITTER_PX + 1))
+            c = AI_car(base_x, y, 10, 20, self.brain_list[i], 180+np.random.randint(-45,+45))
             self.sprite_list.append(c)
             self.sprite_running.add(c)
 
@@ -132,10 +142,13 @@ class Car_manager():
 
         self.cur_epoch = 0
         self.total_time = 0
+        base_x = TILESIZE * 4 + int(TILESIZE / 2)
+        base_y = TILESIZE * 8 + int(TILESIZE / 2)
 
         # a vytvořím auta:
         for i in range(self.pocet_aut):
-            c = AI_car(TILESIZE * 4 + int(TILESIZE / 2), TILESIZE * 8 + int(TILESIZE / 2), 10, 20, self.brain_list[i])
+            y = base_y + int(np.random.randint(-SPAWN_Y_JITTER_PX, SPAWN_Y_JITTER_PX + 1))
+            c = AI_car(base_x, y, 10, 20, self.brain_list[i],  180+np.random.randint(-45,+45))
             c.brain.set_parameters(params)
             if i>0:
                 c.brain.mutate()

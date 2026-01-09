@@ -10,7 +10,7 @@ class AI_car(pygame.sprite.Sprite):
     def set_atlas(cls, atlas: TextureAtlas) -> None:
         cls.atlas = atlas
 
-    def __init__(self, x, y, width, height, brain):
+    def __init__(self, x, y, width, height, brain, angle = 180.0):
         super().__init__()
 
         if AI_car.atlas is None:
@@ -21,7 +21,7 @@ class AI_car(pygame.sprite.Sprite):
 
         # fyzika auta
         self.speed = 0.0
-        self.angle = 180.0           # 0 = doprava
+        self.angle = angle          # 0 = doprava
         self.max_speed = MAX_SPEED
 
         # parametry řízení
