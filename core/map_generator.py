@@ -129,11 +129,8 @@ class Map:
         for index in range(count):
             map = Map(f"map_{uuid.uuid4()}")
 
-            print(f"Generating map {map.name}...")
             if map.generate(width, height, start_x, start_y):
                 maps.append(map)
-
-            print(f"Generated map {map.name}")
 
         return maps
 
