@@ -5,7 +5,8 @@ from collections import deque
 from functools import cached_property
 from pathlib import Path
 from typing import List, Optional, Dict, TypedDict
-from constants import Tile
+
+from PIL import Image
 
 #
 # How to run this file: python -m core.map_generator
@@ -24,6 +25,24 @@ from constants import Tile
 # - MAX_ATTEMPTS - how many attempts it can try to generate the map
 #
 
+BASE_PATH = Path(__file__).parent
+TILES_PATH = BASE_PATH / ".." / "assets/racing-pack/PNG/Tiles/"
+
+class Tile(str, enum.Enum):
+    HORIZONTAL = "road_dirt01"
+    VERTICAL = "road_dirt90"
+    LEFT_BOTTOM = "road_dirt38"
+    LEFT_TOP = "road_dirt02"
+    RIGHT_TOP = "road_dirt04"
+    BOTTOM_RIGHT = "road_dirt40"
+    HORIZONTAL_START = "road_dirt42"
+    EMPTY = "land_grass04"
+
+    def get_path(self) -> Path:
+        if self == Tile.EMPTY:
+            return TILES_PATH / "Grass" / (self + ".png")
+        else:
+            return TILES_PATH / "Dirt road" / (self + ".png")
 
 class Side(enum.Enum):
     TOP = 1
@@ -70,6 +89,8 @@ DIFFICULTY_REQUIRED_TILES_COUNT = {
 
 MAX_ATTEMPTS = 50
 MAX_DEPTH = 2000
+
+TILE_SIZE = 128
 
 class Map:
     grid: List[List[Tile]]
@@ -238,6 +259,14 @@ class Map:
 
         return False
 
+    @property
+    def rows(self):
+        return len(self.grid)
+
+    @property
+    def columns(self):
+        return len(self.grid[0]) if self.rows > 0 else 0
+
     def get_road_tile_count(self):
         count = 0
 
@@ -273,6 +302,20 @@ class Map:
             print("|" + "".join(chars[tile] for tile in row) + "|")
         print("-" * (len(self.grid[0]) + 2))
 
+    def show(self):
+        canvas = Image.new('RGBA', (self.columns * TILE_SIZE, self.rows * TILE_SIZE))
+
+        for i, row in enumerate(self.grid):
+            for j, tile in enumerate(row):
+                x = j * TILE_SIZE
+                y = i * TILE_SIZE
+
+                img = Image.open(tile.get_path())
+                canvas.paste(img, (x, y))
+                img.close()
+
+        canvas.show()
+
     def save_as_csv(self, path: Path):
         with open(path, mode='w', newline='') as f:
             writer = csv.writer(f)
@@ -281,14 +324,12 @@ class Map:
 
 
 if __name__ == "__main__":
-    BASE_PATH = Path(__file__).parent
-
     # Defined start and with of map
     start_x, start_y = 5, 9
     width, height = 10, 10
 
     # How many maps to generate
-    count = 500
+    count = 1
 
     # Generate the map
     maps = Map.generate_maps(width, height, count, start_x, start_y)
@@ -300,3 +341,4 @@ if __name__ == "__main__":
 
         map.save_as_csv(path)
         map.print()
+        map.show()
