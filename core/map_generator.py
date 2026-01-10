@@ -71,7 +71,7 @@ def generate_map(width: int, height: int) -> Optional[List[List[Tiles]]]:
 
         context = {"depth": 0}
 
-        if _solve_path(grid, start_x + dx, start_y + dy, Sides.LEFT, width, height, start_x, start_y, 1, context):
+        if solve_path(grid, start_x + dx, start_y + dy, Sides.LEFT, width, height, start_x, start_y, 1, context):
             return grid
 
     print("Could not generate a valid map within constraints.")
@@ -106,7 +106,7 @@ def has_path_to_start(grid, start_x, start_y, target_x, target_y, width, height)
     return False
 
 
-def _solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length, context):
+def solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length, context):
     # Limit how deep it can check for solving path
     if context["depth"] > MAX_DEPTH:
         return False
@@ -167,7 +167,7 @@ def _solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length,
                 path_possible = False
 
         if path_possible:
-            if _solve_path(grid, next_x, next_y, next_entry, width, height, start_x, start_y, length + 1, context):
+            if solve_path(grid, next_x, next_y, next_entry, width, height, start_x, start_y, length + 1, context):
                 return True
 
         # Backtrack - if path not possible and we can still try, revert to empty
