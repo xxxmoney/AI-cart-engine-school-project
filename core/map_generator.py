@@ -254,9 +254,11 @@ if __name__ == "__main__":
     width, height = 10, 10
 
     # How many maps to generate
-    count = 50
+    count = 5
 
     # Generate the map
     maps = generate_maps(width, height, count, start_x, start_y)
     for i, map in enumerate(maps):
-        save_map_as_csv(map, BASE_PATH / ".." / "UserData" / "generated" / f"map_generated_{i:02d}.csv")
+        path = BASE_PATH / ".." / "UserData" / "generated" / f"map_generated_{i:02d}.csv"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        save_map_as_csv(map, path)
