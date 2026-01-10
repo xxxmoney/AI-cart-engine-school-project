@@ -82,7 +82,7 @@ OPPOSITE = {
     Side.RIGHT: Side.LEFT
 }
 
-DIFFICULTY_REQUIRED_TILES_COUNT = {
+DIFFICULTY_MAX_TILES_COUNT = {
     Difficulty.EASY: 10,
     Difficulty.MEDIUM: 25,
     Difficulty.HARD: 50,
@@ -286,8 +286,8 @@ class Map:
     def difficulty(self) -> Optional[Difficulty]:
         road_tile_count = self.get_road_tile_count()
 
-        for key in DIFFICULTY_REQUIRED_TILES_COUNT.keys():
-            if (road_tile_count <= DIFFICULTY_REQUIRED_TILES_COUNT[key]):
+        for key in DIFFICULTY_MAX_TILES_COUNT.keys():
+            if (road_tile_count <= DIFFICULTY_MAX_TILES_COUNT[key]):
                 return key
 
         return None
