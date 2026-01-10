@@ -4,6 +4,7 @@ import numpy as np
 import copy
 import string
 
+# AI Brain for out team VERS - Verstappen
 class AIbrain_vers:
     def __init__(self):
         super().__init__()
