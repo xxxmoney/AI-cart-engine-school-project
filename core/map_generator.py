@@ -4,6 +4,7 @@ import random
 import uuid
 from collections import deque
 from functools import cached_property
+from itertools import chain
 from pathlib import Path
 from typing import List, Optional, Dict, TypedDict
 
@@ -124,15 +125,19 @@ class Map:
         return False
 
     @staticmethod
-    def generate_maps(width: int, height: int, count: int, start_x: Optional[int] = None, start_y: Optional[int] = None):
-        maps = []
-        for index in range(count):
+    def generate_maps(width: int, height: int, count_of_each_difficulty: int, start_x: Optional[int] = None, start_y: Optional[int] = None) -> list["Map"]:
+        mapsByDifficulty: dict[Difficulty, list[Map]] = {}
+        for difficulty in Difficulty:
+            mapsByDifficulty[difficulty] = []
+
+        while not all(len(maps) == count_of_each_difficulty for maps in mapsByDifficulty.values()):
             map = Map(f"map_{uuid.uuid4()}")
 
             if map.generate(width, height, start_x, start_y):
-                maps.append(map)
+                if len(mapsByDifficulty[map.difficulty]) < count_of_each_difficulty:
+                    mapsByDifficulty[map.difficulty].append(map)
 
-        return maps
+        return list(chain.from_iterable(mapsByDifficulty.values()))
 
     def _reset_grid(self):
         self.grid = [[Tile.EMPTY for _ in range(width)] for _ in range(height)]
@@ -328,11 +333,11 @@ if __name__ == "__main__":
     start_x, start_y = 4, 8
     width, height = 10, 10
 
-    # How many maps to generate
-    count = 1000
+    # How many maps of each level to generate
+    count_of_each_difficulty = 5
 
     # Generate the map
-    maps = Map.generate_maps(width, height, count, start_x, start_y)
+    maps = Map.generate_maps(width, height, count_of_each_difficulty, start_x, start_y)
     folder_path = BASE_PATH / ".." / "UserData" / "generated"
 
     for i, map in enumerate(maps):
