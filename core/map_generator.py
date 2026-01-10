@@ -2,7 +2,8 @@ import enum
 import random
 import time
 from collections import deque
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, TypedDict
+
 
 #
 # Algorithm for creating valid race map
@@ -19,7 +20,7 @@ from typing import List, Optional, Dict
 # - MAX_ATTEMPTS - how many attempts it can try to generate the map
 #
 
-class Tiles(str, enum.Enum):
+class Tile(str, enum.Enum):
     HORIZONTAL = "road_dirt01"
     VERTICAL = "road_dirt90"
     LEFT_BOTTOM = "road_dirt38"
@@ -30,57 +31,72 @@ class Tiles(str, enum.Enum):
     EMPTY = "land_grass04"
 
 
-class Sides(enum.Enum):
+class Side(enum.Enum):
     TOP = 1
     RIGHT = 2
     BOTTOM = 3
     LEFT = 4
 
 
-NEXT_SIDES: Dict[Tiles, List[Sides]] = {
-    Tiles.HORIZONTAL: [Sides.LEFT, Sides.RIGHT],
-    Tiles.VERTICAL: [Sides.TOP, Sides.BOTTOM],
-    Tiles.LEFT_BOTTOM: [Sides.TOP, Sides.RIGHT],
-    Tiles.LEFT_TOP: [Sides.BOTTOM, Sides.RIGHT],
-    Tiles.RIGHT_TOP: [Sides.LEFT, Sides.BOTTOM],
-    Tiles.BOTTOM_RIGHT: [Sides.LEFT, Sides.TOP],
-    Tiles.HORIZONTAL_START: [Sides.LEFT, Sides.RIGHT],
-    Tiles.EMPTY: []
+class Context(TypedDict):
+    depth: int
+
+
+NEXT_SIDES: Dict[Tile, List[Side]] = {
+    Tile.HORIZONTAL: [Side.LEFT, Side.RIGHT],
+    Tile.VERTICAL: [Side.TOP, Side.BOTTOM],
+    Tile.LEFT_BOTTOM: [Side.TOP, Side.RIGHT],
+    Tile.LEFT_TOP: [Side.BOTTOM, Side.RIGHT],
+    Tile.RIGHT_TOP: [Side.LEFT, Side.BOTTOM],
+    Tile.BOTTOM_RIGHT: [Side.LEFT, Side.TOP],
+    Tile.HORIZONTAL_START: [Side.LEFT, Side.RIGHT],
+    Tile.EMPTY: []
 }
 
 OPPOSITE = {
-    Sides.TOP: Sides.BOTTOM,
-    Sides.BOTTOM: Sides.TOP,
-    Sides.LEFT: Sides.RIGHT,
-    Sides.RIGHT: Sides.LEFT
+    Side.TOP: Side.BOTTOM,
+    Side.BOTTOM: Side.TOP,
+    Side.LEFT: Side.RIGHT,
+    Side.RIGHT: Side.LEFT
 }
 
 MAX_ATTEMPTS = 50
 MAX_DEPTH = 2000
 
-def generate_map(width: int, height: int) -> Optional[List[List[Tiles]]]:
+def generate_map(width: int, height: int, start_x: Optional[int] = None, start_y: Optional[int] = None) -> Optional[List[List[Tile]]]:
     for attempt in range(MAX_ATTEMPTS):
-        grid = [[Tiles.EMPTY for _ in range(width)] for _ in range(height)]
+        grid = [[Tile.EMPTY for _ in range(width)] for _ in range(height)]
 
-        start_x = random.randint(2, width - 3)
-        start_y = random.randint(2, height - 3)
-        grid[start_y][start_x] = Tiles.HORIZONTAL_START
+        if start_x is None:
+            start_x = random.randint(2, width - 3)
+        if start_y is None:
+            start_y = random.randint(2, height - 3)
+        grid[start_y][start_x] = Tile.HORIZONTAL_START
 
         # Start moving RIGHT from the start tile
-        dx, dy = 1, 0
+        delta_x, delta_y = 1, 0
 
-        context = {"depth": 0}
+        context: Context = {"depth": 0}
 
-        if solve_path(grid, start_x + dx, start_y + dy, Sides.LEFT, width, height, start_x, start_y, 1, context):
+        if solve_path(grid, start_x + delta_x, start_y + delta_y, Side.LEFT, width, height, start_x, start_y, 1, context):
             return grid
 
     print("Could not generate a valid map within constraints.")
     return None
 
 
-def has_path_to_start(grid, start_x, start_y, target_x, target_y, width, height):
+def has_path_to_start(grid: list[list[Tile]], start_x: int, start_y: int, target_x: int, target_y: int, width: int, height: int):
     """
     BFS to check if the target (start tile) is reachable
+
+    :param grid:
+    :param start_x:
+    :param start_y:
+    :param target_x:
+    :param target_y:
+    :param width:
+    :param height:
+    :return:
     """
 
     if start_x == target_x and start_y == target_y:
@@ -98,7 +114,7 @@ def has_path_to_start(grid, start_x, start_y, target_x, target_y, width, height)
             if 0 <= neighbour_x < width and 0 <= neighbour_y < height:
                 if (neighbour_x, neighbour_y) not in visited:
                     # Allow move if Empty OR if it's the Target
-                    if grid[neighbour_y][neighbour_x] == Tiles.EMPTY or (neighbour_x == target_x and neighbour_y == target_y):
+                    if grid[neighbour_y][neighbour_x] == Tile.EMPTY or (neighbour_x == target_x and neighbour_y == target_y):
                         if neighbour_x == target_x and neighbour_y == target_y:
                             return True
                         visited.add((neighbour_x, neighbour_y))
@@ -106,7 +122,23 @@ def has_path_to_start(grid, start_x, start_y, target_x, target_y, width, height)
     return False
 
 
-def solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length, context):
+def solve_path(grid: list[list[Tile]], x: int, y: int, entry_side: Side, width: int, height: int, start_x: int, start_y: int, length: int, context: Context):
+    """
+
+
+    :param grid:
+    :param x:
+    :param y:
+    :param entry_side:
+    :param width:
+    :param height:
+    :param start_x:
+    :param start_y:
+    :param length:
+    :param context:
+    :return:
+    """
+
     # Limit how deep it can check for solving path
     if context["depth"] > MAX_DEPTH:
         return False
@@ -115,20 +147,20 @@ def solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length, 
 
     # Check if the track loop has completed
     if x == start_x and y == start_y:
-        if entry_side == Sides.LEFT and length > 8:  # Min length constraint
+        if entry_side == Side.LEFT and length > 8:  # Min length constraint
             return True
         return False
 
     #  Check for bounds and collisions
     if not (0 <= x < width and 0 <= y < height):
         return False
-    if grid[y][x] != Tiles.EMPTY:
+    if grid[y][x] != Tile.EMPTY:
         return False
 
     # Get possible candidates for next tile
     candidates = []
-    for tile in Tiles:
-        if tile == Tiles.HORIZONTAL_START or tile == Tiles.EMPTY:
+    for tile in Tile:
+        if tile == Tile.HORIZONTAL_START or tile == Tile.EMPTY:
             continue
         if entry_side in NEXT_SIDES[tile]:
             candidates.append(tile)
@@ -143,13 +175,13 @@ def solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length, 
         exit_side = exits[0]
 
         delta_x, delta_y = 0, 0
-        if exit_side == Sides.TOP:
+        if exit_side == Side.TOP:
             delta_y = -1
-        elif exit_side == Sides.BOTTOM:
+        elif exit_side == Side.BOTTOM:
             delta_y = 1
-        elif exit_side == Sides.LEFT:
+        elif exit_side == Side.LEFT:
             delta_x = -1
-        elif exit_side == Sides.RIGHT:
+        elif exit_side == Side.RIGHT:
             delta_x = 1
 
         next_x, next_y = x + delta_x, y + delta_y
@@ -171,7 +203,7 @@ def solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length, 
                 return True
 
         # Backtrack - if path not possible and we can still try, revert to empty
-        grid[y][x] = Tiles.EMPTY
+        grid[y][x] = Tile.EMPTY
 
     return False
 
@@ -182,10 +214,10 @@ def print_map(grid):
         return
 
     chars = {
-        Tiles.HORIZONTAL: "═", Tiles.VERTICAL: "║",
-        Tiles.LEFT_BOTTOM: "╚", Tiles.LEFT_TOP: "╔",
-        Tiles.RIGHT_TOP: "╗", Tiles.BOTTOM_RIGHT: "╝",
-        Tiles.HORIZONTAL_START: "S", Tiles.EMPTY: " "
+        Tile.HORIZONTAL: "═", Tile.VERTICAL: "║",
+        Tile.LEFT_BOTTOM: "╚", Tile.LEFT_TOP: "╔",
+        Tile.RIGHT_TOP: "╗", Tile.BOTTOM_RIGHT: "╝",
+        Tile.HORIZONTAL_START: "S", Tile.EMPTY: " "
     }
 
     print("-" * (len(grid[0]) + 2))
@@ -196,7 +228,13 @@ def print_map(grid):
 
 if __name__ == "__main__":
     start_time = time.time()
-    map_data = generate_map(10, 10)
+
+    # Defined start and with of map
+    start_x, start_y = 5, 9
+    width, height = 10, 10
+
+    # Generate the map
+    map_data = generate_map(width, height, start_x, start_y)
 
     print(f"Generation took: {time.time() - start_time:.4f}s")
     print_map(map_data)
