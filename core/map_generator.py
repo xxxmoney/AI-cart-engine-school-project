@@ -325,11 +325,11 @@ class Map:
 
 if __name__ == "__main__":
     # Defined start and with of map
-    start_x, start_y = 5, 9
+    start_x, start_y = 4, 8
     width, height = 10, 10
 
     # How many maps to generate
-    count = 1
+    count = 1000
 
     # Generate the map
     maps = Map.generate_maps(width, height, count, start_x, start_y)
