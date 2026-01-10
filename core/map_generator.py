@@ -1,6 +1,7 @@
 import csv
 import enum
 import random
+import uuid
 from collections import deque
 from functools import cached_property
 from pathlib import Path
@@ -93,9 +94,11 @@ MAX_DEPTH = 2000
 TILE_SIZE = 128
 
 class Map:
+    name: str
     grid: List[List[Tile]]
 
-    def __init__(self) -> None:
+    def __init__(self, name: str) -> None:
+        self.name = name
         self._reset_grid()
 
     def generate(self, width: int, height: int, start_x: Optional[int] = None, start_y: Optional[int] = None) -> bool:
@@ -124,13 +127,13 @@ class Map:
     def generate_maps(width: int, height: int, count: int, start_x: Optional[int] = None, start_y: Optional[int] = None):
         maps = []
         for index in range(count):
-            print(f"Generating map {index}...")
+            map = Map(f"map_{uuid.uuid4()}")
 
-            map = Map()
+            print(f"Generating map {map.name}...")
             if map.generate(width, height, start_x, start_y):
                 maps.append(map)
 
-            print(f"Generated map {index}")
+            print(f"Generated map {map.name}")
 
         return maps
 
@@ -296,7 +299,7 @@ class Map:
             Tile.HORIZONTAL_START: "S", Tile.EMPTY: " "
         }
 
-        print(f"{self.difficulty}:")
+        print(f"[{self.name} - {self.difficulty}]:")
         print("-" * (len(self.grid[0]) + 2))
         for row in self.grid:
             print("|" + "".join(chars[tile] for tile in row) + "|")
@@ -314,7 +317,7 @@ class Map:
                 canvas.paste(img, (x, y))
                 img.close()
 
-        canvas.show()
+        canvas.show(self.name)
 
     def save_as_csv(self, path: Path):
         with open(path, mode='w', newline='') as f:
@@ -336,9 +339,11 @@ if __name__ == "__main__":
     folder_path = BASE_PATH / ".." / "UserData" / "generated"
 
     for i, map in enumerate(maps):
-        path = folder_path / map.difficulty / f"map_generated_{i:02d}.csv"
+        path = folder_path / map.difficulty / (map.name + ".csv")
         path.parent.mkdir(parents=True, exist_ok=True)
 
         map.save_as_csv(path)
         map.print()
-        map.show()
+
+        # Uncomment to also show maps as image
+        #map.show()
