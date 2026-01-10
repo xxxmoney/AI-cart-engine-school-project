@@ -9,7 +9,7 @@ N_INPUTS = 9
 N_ACTIONS = 4  # [up, down, left, right]
 
 # vždy pojmenováváme jako "AIbrain_jemnoteamu"
-class AIbrain_linear:
+class AIbrain_vers:
     def __init__(self):
         super().__init__()
         self.score = 0
