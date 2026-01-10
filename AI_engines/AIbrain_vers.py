@@ -17,7 +17,7 @@ class AIbrain_vers:
     def init_param(self):
         self.w1 = np_random.rand(4)
         self.w2 = np_random.rand(4)
-        self.NAME ="Safr_"+''.join(random.choices(self.chars, k=5))
+        self.NAME ="vers_"+''.join(random.choices(self.chars, k=5))
         self.store()
 
     def store(self):
