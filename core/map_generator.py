@@ -2,6 +2,7 @@ import csv
 import enum
 import random
 from collections import deque
+from functools import cached_property
 from pathlib import Path
 from typing import List, Optional, Dict, TypedDict
 from constants import Tile
@@ -31,6 +32,13 @@ class Side(enum.Enum):
     LEFT = 4
 
 
+class Difficulty(str, enum.Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard",
+    EXTREME = "extreme"
+
+
 class Context(TypedDict):
     depth: int
 
@@ -53,23 +61,31 @@ OPPOSITE = {
     Side.RIGHT: Side.LEFT
 }
 
+DIFFICULTY_REQUIRED_TILES_COUNT = {
+    Difficulty.EASY: 10,
+    Difficulty.MEDIUM: 25,
+    Difficulty.HARD: 50,
+    Difficulty.EXTREME: float("inf")
+}
+
 MAX_ATTEMPTS = 50
 MAX_DEPTH = 2000
 
 class Map:
-    grid: Optional[List[List[Tile]]]
+    grid: List[List[Tile]]
 
     def __init__(self) -> None:
-        self.grid = None
+        self._reset_grid()
 
     def generate(self, width: int, height: int, start_x: Optional[int] = None, start_y: Optional[int] = None) -> bool:
         for attempt in range(MAX_ATTEMPTS):
-            self.grid = [[Tile.EMPTY for _ in range(width)] for _ in range(height)]
+            self._reset_grid()
 
             if start_x is None:
                 start_x = random.randint(2, width - 3)
             if start_y is None:
                 start_y = random.randint(2, height - 3)
+
             self.grid[start_y][start_x] = Tile.HORIZONTAL_START
 
             # Start moving RIGHT from the start tile
@@ -97,6 +113,8 @@ class Map:
 
         return maps
 
+    def _reset_grid(self):
+        self.grid = [[Tile.EMPTY for _ in range(width)] for _ in range(height)]
 
     def has_path_to_start(self, start_x: int, start_y: int, target_x: int, target_y: int, width: int, height: int):
         """
@@ -220,6 +238,26 @@ class Map:
 
         return False
 
+    def get_road_tile_count(self):
+        count = 0
+
+        for row in self.grid:
+            for tile in row:
+                if tile != Tile.EMPTY:
+                    count += 1
+
+        return count
+
+    @property
+    def difficulty(self) -> Optional[Difficulty]:
+        road_tile_count = self.get_road_tile_count()
+
+        for key in DIFFICULTY_REQUIRED_TILES_COUNT.keys():
+            if (road_tile_count <= DIFFICULTY_REQUIRED_TILES_COUNT[key]):
+                return key
+
+        return None
+
 
     def print(self):
         chars = {
@@ -229,6 +267,7 @@ class Map:
             Tile.HORIZONTAL_START: "S", Tile.EMPTY: " "
         }
 
+        print(f"{self.difficulty}:")
         print("-" * (len(self.grid[0]) + 2))
         for row in self.grid:
             print("|" + "".join(chars[tile] for tile in row) + "|")
@@ -249,17 +288,14 @@ if __name__ == "__main__":
     width, height = 10, 10
 
     # How many maps to generate
-    count = 5
+    count = 500
 
     # Generate the map
     maps = Map.generate_maps(width, height, count, start_x, start_y)
     folder_path = BASE_PATH / ".." / "UserData" / "generated"
-    easy_path = folder_path / "easy"
-    medium_path = folder_path / "medium"
-    hard_path = folder_path / "hard"
 
     for i, map in enumerate(maps):
-        path = folder_path / f"map_generated_{i:02d}.csv"
+        path = folder_path / map.difficulty / f"map_generated_{i:02d}.csv"
         path.parent.mkdir(parents=True, exist_ok=True)
 
         map.save_as_csv(path)
