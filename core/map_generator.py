@@ -1,7 +1,9 @@
+import csv
 import enum
 import random
 import time
 from collections import deque
+from pathlib import Path
 from typing import List, Optional, Dict, TypedDict
 
 
@@ -63,6 +65,8 @@ OPPOSITE = {
 MAX_ATTEMPTS = 50
 MAX_DEPTH = 2000
 
+BASE_PATH = Path(__file__).parent
+
 def generate_map(width: int, height: int, start_x: Optional[int] = None, start_y: Optional[int] = None) -> Optional[List[List[Tile]]]:
     for attempt in range(MAX_ATTEMPTS):
         grid = [[Tile.EMPTY for _ in range(width)] for _ in range(height)]
@@ -83,6 +87,18 @@ def generate_map(width: int, height: int, start_x: Optional[int] = None, start_y
 
     print("Could not generate a valid map within constraints.")
     return None
+
+
+def generate_maps(width: int, height: int, count: int, start_x: Optional[int] = None, start_y: Optional[int] = None):
+    maps = []
+    for index in range(count):
+        print(f"Generating map {index}...")
+
+        maps.append(generate_map(width, height, start_x, start_y))
+
+        print(f"Generated map {index}")
+
+    return maps
 
 
 def has_path_to_start(grid: list[list[Tile]], start_x: int, start_y: int, target_x: int, target_y: int, width: int, height: int):
@@ -208,7 +224,7 @@ def solve_path(grid: list[list[Tile]], x: int, y: int, entry_side: Side, width: 
     return False
 
 
-def print_map(grid):
+def print_map(grid: list[list[Tile]]):
     if not grid:
         print("No Map Generated")
         return
@@ -225,16 +241,22 @@ def print_map(grid):
         print("|" + "".join(chars[tile] for tile in row) + "|")
     print("-" * (len(grid[0]) + 2))
 
+def save_map_as_csv(grid: list[list[Tile]], path: Path):
+    with open(path, mode='w', newline='') as f:
+        writer = csv.writer(f)
+        for row in grid:
+            writer.writerow([tile.value for tile in row])
+
 
 if __name__ == "__main__":
-    start_time = time.time()
-
     # Defined start and with of map
     start_x, start_y = 5, 9
     width, height = 10, 10
 
-    # Generate the map
-    map_data = generate_map(width, height, start_x, start_y)
+    # How many maps to generate
+    count = 50
 
-    print(f"Generation took: {time.time() - start_time:.4f}s")
-    print_map(map_data)
+    # Generate the map
+    maps = generate_maps(width, height, count, start_x, start_y)
+    for i, map in enumerate(maps):
+        save_map_as_csv(map, BASE_PATH / ".." / "UserData" / "generated" / f"map_generated_{i:02d}.csv")
