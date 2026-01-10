@@ -1,12 +1,13 @@
 import csv
 import enum
 import random
-import time
 from collections import deque
 from pathlib import Path
 from typing import List, Optional, Dict, TypedDict
+from constants import Tile
 
-
+#
+# How to run this file: python -m core.map_generator
 #
 # Algorithm for creating valid race map
 # It consists of two main parts
@@ -21,16 +22,6 @@ from typing import List, Optional, Dict, TypedDict
 # - MAX_DEPTH - how deep it can go in checking the path
 # - MAX_ATTEMPTS - how many attempts it can try to generate the map
 #
-
-class Tile(str, enum.Enum):
-    HORIZONTAL = "road_dirt01"
-    VERTICAL = "road_dirt90"
-    LEFT_BOTTOM = "road_dirt38"
-    LEFT_TOP = "road_dirt02"
-    RIGHT_TOP = "road_dirt04"
-    BOTTOM_RIGHT = "road_dirt40"
-    HORIZONTAL_START = "road_dirt42"
-    EMPTY = "land_grass04"
 
 
 class Side(enum.Enum):

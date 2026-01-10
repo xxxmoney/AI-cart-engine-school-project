@@ -1,4 +1,16 @@
 # Barvy:
+import enum
+
+class Tile(str, enum.Enum):
+    HORIZONTAL = "road_dirt01"
+    VERTICAL = "road_dirt90"
+    LEFT_BOTTOM = "road_dirt38"
+    LEFT_TOP = "road_dirt02"
+    RIGHT_TOP = "road_dirt04"
+    BOTTOM_RIGHT = "road_dirt40"
+    HORIZONTAL_START = "road_dirt42"
+    EMPTY = "land_grass04"
+
 BLACK = (0, 0, 0)
 GREY = (192, 192, 192)
 PURPLE = (150, 10, 100)
