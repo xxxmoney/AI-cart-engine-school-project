@@ -41,13 +41,11 @@ OPPOSITE = {
     Sides.RIGHT: Sides.LEFT
 }
 
+MAX_ATTEMPTS = 50
+MAX_RECURSION = 2000
 
 def generate_map(width: int, height: int) -> Optional[List[List[Tiles]]]:
-    # Attempt generation multiple times, but fail fast on each
-    # to prevent UI freezes.
-    max_attempts = 50
-
-    for attempt in range(max_attempts):
+    for attempt in range(MAX_ATTEMPTS):
         grid = [[Tiles.EMPTY for _ in range(width)] for _ in range(height)]
 
         start_x = random.randint(2, width - 3)
@@ -57,7 +55,7 @@ def generate_map(width: int, height: int) -> Optional[List[List[Tiles]]]:
         # Operation context to limit computation per attempt
         # 'ops': Current number of recursive steps/checks
         # 'limit': Max steps allowed before aborting this attempt
-        ctx = {"ops": 0, "limit": 2000}
+        ctx = {"ops": 0, "limit": MAX_RECURSION}
 
         # Start moving RIGHT from the start tile
         dx, dy = 1, 0
@@ -71,8 +69,9 @@ def generate_map(width: int, height: int) -> Optional[List[List[Tiles]]]:
 
 def has_path_to_start(grid, start_x, start_y, target_x, target_y, width, height):
     """
-    BFS to check if the target (start tile) is reachable.
+    BFS to check if the target (start tile) is reachable
     """
+
     if start_x == target_x and start_y == target_y:
         return True
 
@@ -152,7 +151,7 @@ def _solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length,
         path_possible = True
         if not (next_x == start_x and next_y == start_y):
             # Optim: Only run BFS every few steps or if close to edges?
-            # For now, we rely on ctx['limit'] to catch expensive cases.
+            # For now, we rely on ctx['limit'] to catch expensive cases
             if not has_path_to_start(grid, next_x, next_y, start_x, start_y, width, height):
                 path_possible = False
 
