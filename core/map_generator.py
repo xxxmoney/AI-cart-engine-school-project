@@ -4,6 +4,20 @@ import time
 from collections import deque
 from typing import List, Optional, Dict
 
+#
+# Algorithm for creating valid race map
+# It consists of two main parts
+# - The Walker (_solve_path)
+#   - Start at the START tile and chooses random compatible tiles for next placement
+#   - It does so until it hits dead end - in this case it uses backtracking - set previous tile as EMPTY and try again
+#   - Or reaches the START tile again, thus creating loop
+# - The Scout (has_path_to_start)
+#   - Part of The Walker - it checks whether the current path can connect back to the start
+#
+# The algorithm is limited in:
+# - MAX_DEPTH - how deep it can go in checking the path
+# - MAX_ATTEMPTS - how many attempts it can try to generate the map
+#
 
 class Tiles(str, enum.Enum):
     HORIZONTAL = "road_dirt01"
@@ -42,7 +56,7 @@ OPPOSITE = {
 }
 
 MAX_ATTEMPTS = 50
-MAX_RECURSION = 2000
+MAX_DEPTH = 2000
 
 def generate_map(width: int, height: int) -> Optional[List[List[Tiles]]]:
     for attempt in range(MAX_ATTEMPTS):
@@ -52,15 +66,12 @@ def generate_map(width: int, height: int) -> Optional[List[List[Tiles]]]:
         start_y = random.randint(2, height - 3)
         grid[start_y][start_x] = Tiles.HORIZONTAL_START
 
-        # Operation context to limit computation per attempt
-        # 'ops': Current number of recursive steps/checks
-        # 'limit': Max steps allowed before aborting this attempt
-        ctx = {"ops": 0, "limit": MAX_RECURSION}
-
         # Start moving RIGHT from the start tile
         dx, dy = 1, 0
 
-        if _solve_path(grid, start_x + dx, start_y + dy, Sides.LEFT, width, height, start_x, start_y, 1, ctx):
+        context = {"depth": 0}
+
+        if _solve_path(grid, start_x + dx, start_y + dy, Sides.LEFT, width, height, start_x, start_y, 1, context):
             return grid
 
     print("Could not generate a valid map within constraints.")
@@ -79,41 +90,42 @@ def has_path_to_start(grid, start_x, start_y, target_x, target_y, width, height)
     visited = {(start_x, start_y)}
 
     while queue:
-        cx, cy = queue.popleft()
+        current_x, current_y = queue.popleft()
 
-        for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-            nx, ny = cx + dx, cy + dy
+        for delta_x, delta_y in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            neighbour_x, neighbour_y = current_x + delta_x, current_y + delta_y
 
-            if 0 <= nx < width and 0 <= ny < height:
-                if (nx, ny) not in visited:
+            if 0 <= neighbour_x < width and 0 <= neighbour_y < height:
+                if (neighbour_x, neighbour_y) not in visited:
                     # Allow move if Empty OR if it's the Target
-                    if grid[ny][nx] == Tiles.EMPTY or (nx == target_x and ny == target_y):
-                        if nx == target_x and ny == target_y:
+                    if grid[neighbour_y][neighbour_x] == Tiles.EMPTY or (neighbour_x == target_x and neighbour_y == target_y):
+                        if neighbour_x == target_x and neighbour_y == target_y:
                             return True
-                        visited.add((nx, ny))
-                        queue.append((nx, ny))
+                        visited.add((neighbour_x, neighbour_y))
+                        queue.append((neighbour_x, neighbour_y))
     return False
 
 
-def _solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length, ctx):
-    # 1. Anti-Freeze Check
-    ctx["ops"] += 1
-    if ctx["ops"] > ctx["limit"]:
+def _solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length, context):
+    # Limit how deep it can check for solving path
+    if context["depth"] > MAX_DEPTH:
         return False
 
-    # 2. Check for Loop Completion
+    context["depth"] += 1
+
+    # Check if the track loop has completed
     if x == start_x and y == start_y:
         if entry_side == Sides.LEFT and length > 8:  # Min length constraint
             return True
         return False
 
-    # 3. Bounds/Collision
+    #  Check for bounds and collisions
     if not (0 <= x < width and 0 <= y < height):
         return False
     if grid[y][x] != Tiles.EMPTY:
         return False
 
-    # 4. Filter Candidates
+    # Get possible candidates for next tile
     candidates = []
     for tile in Tiles:
         if tile == Tiles.HORIZONTAL_START or tile == Tiles.EMPTY:
@@ -123,43 +135,42 @@ def _solve_path(grid, x, y, entry_side, width, height, start_x, start_y, length,
 
     random.shuffle(candidates)
 
-    # 5. Try Candidates
+    # Try possible candidates
     for tile in candidates:
         connections = NEXT_SIDES[tile]
         exits = [s for s in connections if s != entry_side]
         if not exits: continue
         exit_side = exits[0]
 
-        dx, dy = 0, 0
+        delta_x, delta_y = 0, 0
         if exit_side == Sides.TOP:
-            dy = -1
+            delta_y = -1
         elif exit_side == Sides.BOTTOM:
-            dy = 1
+            delta_y = 1
         elif exit_side == Sides.LEFT:
-            dx = -1
+            delta_x = -1
         elif exit_side == Sides.RIGHT:
-            dx = 1
+            delta_x = 1
 
-        next_x, next_y = x + dx, y + dy
+        next_x, next_y = x + delta_x, y + delta_y
         next_entry = OPPOSITE[exit_side]
 
         # Place tentatively
         grid[y][x] = tile
 
-        # 6. Reachability Check (Heuristic)
+        # Reachability Check
         # Only check if we aren't closing the loop immediately
         path_possible = True
         if not (next_x == start_x and next_y == start_y):
-            # Optim: Only run BFS every few steps or if close to edges?
-            # For now, we rely on ctx['limit'] to catch expensive cases
+            # Optim: Only run BFS every few steps or if close to edges
             if not has_path_to_start(grid, next_x, next_y, start_x, start_y, width, height):
                 path_possible = False
 
         if path_possible:
-            if _solve_path(grid, next_x, next_y, next_entry, width, height, start_x, start_y, length + 1, ctx):
+            if _solve_path(grid, next_x, next_y, next_entry, width, height, start_x, start_y, length + 1, context):
                 return True
 
-        # Backtrack
+        # Backtrack - if path not possible and we can still try, revert to empty
         grid[y][x] = Tiles.EMPTY
 
     return False
@@ -185,6 +196,7 @@ def print_map(grid):
 
 if __name__ == "__main__":
     start_time = time.time()
-    map_data = generate_map(15, 10)
+    map_data = generate_map(10, 10)
+
     print(f"Generation took: {time.time() - start_time:.4f}s")
     print_map(map_data)
