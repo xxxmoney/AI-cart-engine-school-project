@@ -4,7 +4,7 @@ import numpy as np
 import copy
 import string
 
-class AIbrain_TeamName:
+class AIbrain_vers:
     def __init__(self):
         super().__init__()
         self.score = 0
