@@ -1,13 +1,13 @@
 import csv
 import enum
 import random
+import sys
 import uuid
 from collections import deque
 from functools import cached_property
 from itertools import chain
 from pathlib import Path
 from typing import List, Optional, Dict, TypedDict
-
 from PIL import Image
 
 #
@@ -27,8 +27,8 @@ from PIL import Image
 # - MAX_ATTEMPTS - how many attempts it can try to generate the map
 #
 
-BASE_PATH = Path(__file__).parent
-TILES_PATH = BASE_PATH / ".." / "assets/racing-pack/PNG/Tiles/"
+BASE_PATH = Path(__file__).parent.parent
+TILES_PATH = BASE_PATH / "assets/racing-pack/PNG/Tiles/"
 
 class Tile(str, enum.Enum):
     HORIZONTAL = "road_dirt01"
@@ -307,7 +307,7 @@ class Map:
             print("|" + "".join(chars[tile] for tile in row) + "|")
         print("-" * (len(self.grid[0]) + 2))
 
-    def show(self):
+    def get_image(self) -> Image:
         canvas = Image.new('RGBA', (self.columns * TILE_SIZE, self.rows * TILE_SIZE))
 
         for i, row in enumerate(self.grid):
@@ -315,17 +315,30 @@ class Map:
                 x = j * TILE_SIZE
                 y = i * TILE_SIZE
 
-                img = Image.open(tile.get_path())
-                canvas.paste(img, (x, y))
-                img.close()
+                image = Image.open(tile.get_path())
+                canvas.paste(image, (x, y))
+                image.close()
 
-        canvas.show(self.name)
+        return canvas
 
-    def save_as_csv(self, path: Path):
-        with open(path, mode='w', newline='') as f:
+    def save(self, path: Path):
+        self._save_as_csv(path)
+        self._save_as_png(path)
+
+    def _save_as_csv(self, path: Path):
+        path.mkdir(parents=True, exist_ok=True)
+
+        with open(path / (self.name + ".csv"), mode='w', newline='') as f:
             writer = csv.writer(f)
             for row in self.grid:
                 writer.writerow([tile.value for tile in row])
+
+    def _save_as_png(self, path: Path):
+        path.mkdir(parents=True, exist_ok=True)
+
+        image = self.get_image()
+        image.save(path / (self.name + ".png"))
+        image.close()
 
 
 if __name__ == "__main__":
@@ -334,18 +347,14 @@ if __name__ == "__main__":
     width, height = 10, 10
 
     # How many maps of each level to generate
-    count_of_each_difficulty = 5
+    count_of_each_difficulty = 50
 
     # Generate the map
     maps = Map.generate_maps(width, height, count_of_each_difficulty, start_x, start_y)
-    folder_path = BASE_PATH / ".." / "UserData" / "generated"
+    folder_path = BASE_PATH / "UserData" / "generated"
 
     for i, map in enumerate(maps):
-        path = folder_path / map.difficulty / (map.name + ".csv")
-        path.parent.mkdir(parents=True, exist_ok=True)
+        path = folder_path / map.difficulty
 
-        map.save_as_csv(path)
+        map.save(path)
         map.print()
-
-        # Uncomment to also show maps as image
-        #map.show()
