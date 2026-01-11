@@ -27,7 +27,7 @@ class AIbrain_linear:
         self.W = (np_random.rand(N_ACTIONS, N_INPUTS) - 0.5) / N_INPUTS
         self.b = (np_random.rand(N_ACTIONS) - 0.5)
 
-        self.NAME = "vers_linear"
+        self.NAME = "SAFR_linear"
 
         # vždy uložit!
         self.store()
