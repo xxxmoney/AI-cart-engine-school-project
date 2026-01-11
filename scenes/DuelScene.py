@@ -51,7 +51,7 @@ class DuelScene:
             self.font_small,
             "map_name"
         )
-        self.input_map.set_default("generated/extreme/map")
+        self.input_map.set_default("DefaultRace")
 
         # engine 1 - třída (AI_engines.<jméno>, třída se jmenuje stejně)
         self.input_engine1 = TextInput(
