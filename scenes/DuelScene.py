@@ -64,7 +64,7 @@ class DuelScene:
             self.font_small,
             "engine1_class"
         )
-        self.input_engine1.set_default("AIbrain_TeamName")
+        self.input_engine1.set_default("AIbrain_vers")
 
         # engine 1 - uložený mozek
         self.input_engine1_save = TextInput(
@@ -77,7 +77,7 @@ class DuelScene:
             self.font_small,
             "engine1_save"
         )
-        self.input_engine1_save.set_default("userbrain.npz")
+        self.input_engine1_save.set_default("vers_v9.npz")
 
         # engine 2 - třída
         self.input_engine2 = TextInput(
@@ -90,7 +90,7 @@ class DuelScene:
             self.font_small,
             "engine2_class"
         )
-        self.input_engine2.set_default("AIbrain_TeamName")
+        self.input_engine2.set_default("AIbrain_linear")
 
         # engine 2 - uložený mozek
         self.input_engine2_save = TextInput(
