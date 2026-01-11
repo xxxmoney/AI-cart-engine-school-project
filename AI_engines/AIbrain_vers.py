@@ -4,7 +4,7 @@ import copy
 import string
 
 
-class AIbrain_Ensemble9:
+class AIbrain_vers:
     """
     Ensemble AI mozek (verze 9 - ANTI-FREEZE):
 
